@@ -50,3 +50,13 @@ jobs:
         run: >
           xvfb-run --auto-servernum
           node tests_external/selenium.mjs
+      - name: Upload Chrome logs
+        if: always()
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: chrome-logs-${{ matrix.os }}
+          path: |
+            /tmp/chrome-debug.log
+            /tmp/chromedriver.log
+          if-no-files-found: warn
+          retention-days: 7

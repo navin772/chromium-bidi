@@ -23,6 +23,7 @@
  */
 
 import * as assert from 'node:assert';
+import {existsSync, readFileSync} from 'node:fs';
 
 import {Builder, ScriptManager, BrowsingContext} from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome.js';
@@ -35,10 +36,12 @@ import {
 
 const chromePath = installAndGetChromePath();
 const chromeDriverPath = installAndGetChromeDriverPath();
+const chromeLogPath = '/tmp/chrome-debug.log';
 
-const chromeService = new chrome.ServiceBuilder(chromeDriverPath).addArguments(
-  `--bidi-mapper-path=${getBidiMapperPath()}`,
-);
+const chromeService = new chrome.ServiceBuilder(chromeDriverPath)
+  .addArguments(`--bidi-mapper-path=${getBidiMapperPath()}`)
+  .addArguments('--verbose')
+  .addArguments('--log-path=/tmp/chromedriver.log');
 
 const driver = new Builder()
   .forBrowser('chrome')
@@ -48,7 +51,11 @@ const driver = new Builder()
       // .addArguments('--disable-gpu')
       .addArguments('--enable-logging=stderr')
       .addArguments('--v=1')
-      .setChromeBinaryPath(chromePath),
+      .addArguments(`--log-file=${chromeLogPath}`)
+      // .addArguments('--no-sandbox')
+      // .addArguments('--disable-dev-shm-usage')
+      .setChromeBinaryPath(chromePath)
+      .setLoggingPrefs({browser: 'ALL', driver: 'ALL'}),
   )
   .setChromeService(chromeService)
   .build();
@@ -101,8 +108,31 @@ try {
     console.log('📌 Screenshot prefix:', base64code);
 
     assert.equal(base64code, 'iVBOR'); // PNG signature
+
+    // Retrieve and display browser logs
+    try {
+      const logs = await driver.manage().logs().get('browser');
+      console.log('\n===== Chrome Browser Logs =====');
+      logs.forEach((entry) => {
+        console.log(`[${entry.level.name}] ${entry.message}`);
+      });
+    } catch (logErr) {
+      console.error('Failed to retrieve browser logs:', logErr.message);
+    }
   } catch (err) {
     console.error('❌ Screenshot failed with error:\n', err);
+
+    // Try to get logs on error
+    try {
+      const logs = await driver.manage().logs().get('browser');
+      console.log('\n===== Chrome Browser Logs (on error) =====');
+      logs.forEach((entry) => {
+        console.log(`[${entry.level.name}] ${entry.message}`);
+      });
+    } catch (logErr) {
+      console.error('Failed to retrieve logs:', logErr.message);
+    }
+
     throw err;
   }
 
@@ -117,4 +147,21 @@ try {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 } finally {
   await driver.quit();
+
+  // Print Chrome logs after quit
+  console.log('\n===== Chrome Debug Logs =====');
+  if (existsSync(chromeLogPath)) {
+    const logs = readFileSync(chromeLogPath, 'utf-8');
+    console.log(logs);
+  } else {
+    console.log('No Chrome log file found at:', chromeLogPath);
+  }
+
+  console.log('\n===== ChromeDriver Logs =====');
+  if (existsSync('/tmp/chromedriver.log')) {
+    const driverLogs = readFileSync('/tmp/chromedriver.log', 'utf-8');
+    console.log(driverLogs);
+  } else {
+    console.log('No ChromeDriver log file found');
+  }
 }
