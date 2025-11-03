@@ -45,7 +45,6 @@ const driver = new Builder()
   .setChromeOptions(
     new chrome.Options()
       .enableBidi()
-      .addArguments('--headless=new')
       .addArguments('--disable-gpu')
       .setChromeBinaryPath(chromePath),
   )
