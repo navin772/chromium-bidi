@@ -45,7 +45,9 @@ const driver = new Builder()
   .setChromeOptions(
     new chrome.Options()
       .enableBidi()
-      .addArguments('--disable-gpu')
+      // .addArguments('--disable-gpu')
+      .addArguments('--enable-logging=stderr')
+      .addArguments('--v=1')
       .setChromeBinaryPath(chromePath),
   )
   .setChromeService(chromeService)
