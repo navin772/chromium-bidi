@@ -73,15 +73,43 @@ try {
   const elementId = evaluateResult.result.sharedId;
 
   // Get screenshot of the element.
-  const response = await browsingContext.captureElementScreenshot(elementId);
+  console.log('\n===== Attempting screenshot… =====');
+
+  try {
+    const response = await browsingContext.captureElementScreenshot(elementId);
+
+    console.log(
+      '✅ Raw BiDi screenshot response:\n',
+      JSON.stringify(response, null, 2),
+    );
+
+    if (!response || !response.slice) {
+      console.error(
+        '❌ Unexpected response format — no base64 screenshot found!',
+      );
+      throw new Error(
+        'Screenshot missing Base64 data (likely a Chromium BiDi regression)',
+      );
+    }
+
+    const base64code = response.slice(0, 5);
+    console.log('📌 Screenshot prefix:', base64code);
+
+    assert.equal(base64code, 'iVBOR'); // PNG signature
+  } catch (err) {
+    console.error('❌ Screenshot failed with error:\n', err);
+    throw err;
+  }
 
   // Constants for checking the file format.
-  const startIndex = 0;
-  const endIndex = 5;
-  const pngMagicNumber = 'iVBOR';
-
-  const base64code = response.slice(startIndex, endIndex);
-  assert.equal(base64code, pngMagicNumber);
+  // const startIndex = 0;
+  // const endIndex = 5;
+  // const pngMagicNumber = 'iVBOR';
+  //
+  // const base64code = response.slice(startIndex, endIndex);
+  // assert.equal(base64code, pngMagicNumber);
+  // sleep for 3 sec
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 } finally {
   await driver.quit();
 }
