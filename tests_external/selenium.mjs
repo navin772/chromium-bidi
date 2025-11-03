@@ -43,7 +43,11 @@ const chromeService = new chrome.ServiceBuilder(chromeDriverPath).addArguments(
 const driver = new Builder()
   .forBrowser('chrome')
   .setChromeOptions(
-    new chrome.Options().enableBidi().setChromeBinaryPath(chromePath),
+    new chrome.Options()
+      .enableBidi()
+      .addArguments('--headless=new')
+      .addArguments('--disable-gpu')
+      .setChromeBinaryPath(chromePath),
   )
   .setChromeService(chromeService)
   .build();
